@@ -198,8 +198,10 @@
   scene.setWorld = function (id, opts) {
     var world = NX.worldById(id);
     var isSame = scene.worldId === id && scene.sky.material.map;
+    var changed = scene.worldId !== id;
     scene.worldId = id;
     scene.scene3.fog.color.setHex(world.fog);
+    if (changed && scene._particles !== undefined) scene.buildParticles();
     scene.renderer.toneMappingExposure = world.exposure;
 
     if (scene.panoramaCache[id]) {
@@ -535,7 +537,7 @@
     var radius = CARD_W * 0.92 / (2 * Math.sin((gapDeg * Math.PI / 180) / 2));
     radius = U.clamp(radius, 2.4, 8.0);
     scene._hubGap = gapDeg * Math.PI / 180;
-    var lift = -0.18;
+    var lift = -0.34;
 
     items.forEach(function (item, i) {
       var angle = (i / n) * Math.PI * 2;   // filled in by the animate loop
@@ -688,6 +690,12 @@
   var particleUniforms = null;
   scene.buildParticles = function (count) {
     clearGroup(scene.particleGroup);
+    // The drifting motes read as stars, so only the night-time skies get them.
+    var world = NX.worldById(scene.worldId || NX.settings.get("world"));
+    if (world && (world.id === "beach" || world.id === "cinema")) {
+      scene._particles = null;
+      return;
+    }
     count = count || (scene.quality === "low" ? 240 : scene.quality === "medium" ? 600 : 1100);
     var geo = new THREE.BufferGeometry();
     var pos = new Float32Array(count * 3);
