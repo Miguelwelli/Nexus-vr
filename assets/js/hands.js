@@ -129,13 +129,18 @@
   }
 
   function ensureBuilt() {
-    if (hands.ready || !THREE || !NX.scene || !NX.scene.ready) return hands.ready;
-    groups.left = buildHand("left", "#7ee7ff");
-    groups.right = buildHand("right", "#c3a6ff");
-    if (!groups.left || !groups.right) return false;
-    NX.scene.scene3.add(groups.left.root);
-    NX.scene.scene3.add(groups.right.root);
-    hands.ready = true;
+    if (!THREE || !NX.scene || !NX.scene.ready) return false;
+    if (!hands.ready) {
+      groups.left = buildHand("left", "#7ee7ff");
+      groups.right = buildHand("right", "#c3a6ff");
+      if (!groups.left || !groups.right) return false;
+      hands.ready = true;
+    }
+    // Self-heal: scenes may be rebuilt (world switch) — re-attach if detached.
+    ["left", "right"].forEach(function (side) {
+      var g = groups[side];
+      if (g && !g.root.parent) NX.scene.scene3.add(g.root);
+    });
     return true;
   }
 
@@ -232,7 +237,7 @@
    */
   function simulate(dt, t) {
     if (hands.source === "native" && hands._lastSample &&
-        U.now() - hands._lastSample < 1.2) {
+        U.now() - hands._lastSample < 2.5) {
       return;
     }
     hands.source = "simulated";
@@ -427,7 +432,7 @@
     if (!ensureBuilt()) return;
 
     if (hands.source === "native" && hands._lastSample &&
-        U.now() - hands._lastSample < 1.2) {
+        U.now() - hands._lastSample < 2.5) {
       renderHand("left", hands.left, true);
       renderHand("right", hands.right, true);
       NX.input.setHandsActive(true);
