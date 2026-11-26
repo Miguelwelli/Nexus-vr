@@ -1,0 +1,1 @@
+{"name":"devtools","version":"1.0.0","private":true,"dependencies":{"@sparticuz/chromium":"^158.0.0","playwright-core":"^1.65.1"}}
