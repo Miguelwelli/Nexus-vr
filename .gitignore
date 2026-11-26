@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+.devtools/node_modules/
+.devtools/package-lock.json
+
+# local dev artifacts
+.devtools/*.png
+.devtools/shots/
+*.log
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db

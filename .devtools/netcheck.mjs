@@ -1,0 +1,10 @@
+import { chromium } from 'playwright-core';
+import sparticuz from '@sparticuz/chromium';
+const execPath = await sparticuz.executablePath();
+const browser = await chromium.launch({ executablePath: execPath, args: [...sparticuz.args, '--no-sandbox'], headless: true });
+const page = await browser.newPage({ viewport: { width: 430, height: 932 } });
+page.on('response', r => { if (r.status() >= 400) console.log('HTTP', r.status(), r.url()); });
+page.on('requestfailed', r => console.log('FAIL', r.url(), r.failure()?.errorText));
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'load' });
+await page.waitForTimeout(3000);
+await browser.close();

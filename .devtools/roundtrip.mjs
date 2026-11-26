@@ -1,0 +1,27 @@
+import { chromium } from 'playwright-core';
+import sparticuz from '@sparticuz/chromium';
+const execPath = await sparticuz.executablePath();
+const browser = await chromium.launch({ executablePath: execPath, args: [...sparticuz.args,'--no-sandbox'], headless: true });
+const page = await browser.newPage({ viewport: { width: 430, height: 932 } });
+const errs = [];
+page.on('pageerror', e => errs.push('ERR ' + e.message));
+page.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text()); });
+await page.goto('http://127.0.0.1:5173/', { waitUntil: 'load' });
+await page.waitForFunction(() => window.NX?.app?.booted);
+await page.waitForTimeout(3500);
+await page.screenshot({ path: '/tmp/rt-entry.png' });
+console.log('entry:', JSON.stringify(await page.evaluate(() => ({ mode: NX.app.mode, canvas: !!document.querySelector('#entry-canvas-host canvas') }))));
+await page.click('#btn-enter');
+await page.waitForTimeout(9000);
+console.log('hub:', JSON.stringify(await page.evaluate(() => ({ mode: NX.app.mode, dock: !document.getElementById('dock').hidden, caption: !document.getElementById('hub-caption').hidden }))));
+await page.click('#btn-back');
+await page.waitForTimeout(3000);
+await page.screenshot({ path: '/tmp/rt-back.png' });
+console.log('back:', JSON.stringify(await page.evaluate(() => ({ mode: NX.app.mode, entryHidden: document.getElementById('entry').hidden, worldHidden: document.getElementById('world').hidden, dock: !document.getElementById('dock').hidden, caption: !document.getElementById('hub-caption').hidden, canvas: document.querySelectorAll('#entry-canvas-host canvas').length }))));
+// re-enter
+await page.click('#btn-enter');
+await page.waitForTimeout(8000);
+console.log('re-enter:', JSON.stringify(await page.evaluate(() => ({ mode: NX.app.mode, items: NX.scene.items.length, hubVis: NX.scene.hubGroup.visible, dock: !document.getElementById('dock').hidden }))));
+await page.screenshot({ path: '/tmp/rt-reenter.png' });
+console.log('ERRORS:', errs.length ? [...new Set(errs)] : 'none');
+await browser.close();
