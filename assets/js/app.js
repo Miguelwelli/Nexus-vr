@@ -630,12 +630,21 @@
     document.getElementById("panel-settings").hidden = true;
     document.getElementById("overlay-root").hidden = true;
     document.getElementById("world").hidden = true;
-    document.getElementById("dock").classList.remove("is-visible");
+    var dockEl = document.getElementById("dock");
+    dockEl.hidden = true;
+    dockEl.classList.remove("is-visible");
+    var cap = document.getElementById("hub-caption");
+    if (cap) cap.hidden = true;
     var entry = document.getElementById("entry");
     entry.hidden = false;
     entry.classList.remove("is-leaving");
     if (NX.games && NX.games.active) NX.games.quit();
+    NX.native.emit("exit", {});
     NX.native.call("setImmersive", false);
+    // the entry canvas keeps rendering; re-measure in case of an orientation change
+    if (NX.app.initEntryCanvas && !document.querySelector("#entry-canvas-host canvas")) {
+      NX.app.initEntryCanvas();
+    }
   }
 
   /* ------------------------------------------------------------- dock */
@@ -1015,20 +1024,31 @@
 
       /* ---------- floaters ---------- */
       var floaters = [];
+      var floaterShapes = [0, 1, 2, 0, 1];
       for (var f = 0; f < 5; f++) {
+        var fg = floaterShapes[f] === 0
+          ? new THREE.OctahedronGeometry(0.40, 0)
+          : floaterShapes[f] === 1
+            ? new THREE.TorusGeometry(0.40, 0.055, 6, 22)
+            : new THREE.IcosahedronGeometry(0.42, 0);
         var floater = new THREE.Mesh(
-          new THREE.TetrahedronGeometry(0.16 + Math.random() * 0.18, 0),
+          fg,
           new THREE.MeshBasicMaterial({
             color: f % 2 ? 0x3be8ff : 0x9b7bff,
             transparent: true,
-            opacity: 0.5,
-            wireframe: true
+            opacity: 0.42,
+            wireframe: true,
+            depthWrite: false
           })
         );
+        // Keep a clear band around the centred logo/copy: only the corners.
+        var slots = [
+          [-4.5, 4.6], [4.7, 4.2], [-5.2, 1.2], [5.0, 0.4], [-1.2, 6.4]
+        ];
         floater.position.set(
-          (Math.random() - 0.5) * 14,
-          3 + Math.random() * 6,
-          -2 - Math.random() * 10
+          slots[f][0] + (Math.random() - 0.5) * 0.8,
+          slots[f][1] + (Math.random() - 0.5) * 0.6,
+          -3.0 - Math.random() * 3.5
         );
         floater.userData = {
           spin: 0.2 + Math.random() * 0.5,
